@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Spendly – Expense Tracker</title>
+<title>GoGad – Expense Tracker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -354,7 +354,7 @@
 <!-- HEADER -->
 <div class="header">
   <div class="header-top">
-    <div class="app-name">Spendly 💜</div>
+    <div class="app-name">GoGad 💜</div>
     <div class="month-badge" id="monthBadge"></div>
   </div>
   <div class="balance-label">Total Balance</div>
@@ -453,7 +453,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  let entries = JSON.parse(localStorage.getItem('spendly_entries') || '[]');
+  let entries = JSON.parse(localStorage.getItem('GoGad_entries') || '[]');
   let currentType = 'expense';
   let currentFilter = 'all';
 
@@ -510,7 +510,7 @@
     showToast('Deleted');
   }
 
-  function save() { localStorage.setItem('spendly_entries', JSON.stringify(entries)); }
+  function save() { localStorage.setItem('GoGad_entries', JSON.stringify(entries)); }
 
   function render() {
     const income = entries.filter(e => e.type === 'income').reduce((s,e) => s+e.amount, 0);
@@ -578,7 +578,7 @@
     const csv = rows.map(r => r.join(',')).join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = 'spendly_export.csv';
+    a.download = 'GoGad_export.csv';
     a.click();
     showToast('📊 CSV downloaded!');
   }
