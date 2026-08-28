@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 90 90" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1a0a5e"/>
+    <stop offset="60%" stop-color="#3a20aa"/>
+    <stop offset="100%" stop-color="#5B4BDB"/>
+  </linearGradient>
+</defs>
+<rect width="90" height="90" rx="22" fill="url(#g)"/>
+<rect width="90" height="45" rx="22" fill="rgba(255,255,255,0.10)"/>
+<path d="M45 14 L65 23 L65 57 Q65 71 45 78 Q25 71 25 57 L25 23 Z" fill="rgba(255,255,255,0.13)"/>
+<path d="M45 16 L63 25 L63 58 Q63 69 45 76 Q27 69 27 58 L27 25 Z" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
+<rect x="31" y="55" width="8" height="15" rx="2" fill="rgba(255,255,255,0.40)"/>
+<rect x="42" y="46" width="8" height="24" rx="2" fill="rgba(255,255,255,0.65)"/>
+<rect x="53" y="37" width="8" height="33" rx="2" fill="white"/>
+<text x="45" y="39" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Helvetica,sans-serif" font-size="17" font-weight="900" fill="white">G</text>
+<circle cx="72" cy="17" r="7" fill="#1a0a5e"/>
+<circle cx="72" cy="17" r="4.5" fill="#00FFB3"/>
+</svg>
