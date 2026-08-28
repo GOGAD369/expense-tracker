@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GoGadAFI">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.svg">
 <style>
@@ -353,10 +353,10 @@ textarea{resize:vertical;min-height:70px}
         <button class="tbtn" id="tb-inc" onclick="setType('income')">↑ Income</button>
       </div>
       <div class="amt-display">
-        <span class="amt-pre">$</span>
+        <span class="amt-pre">₹</span>
         <input class="amt-inp" type="number" id="f-amt" placeholder="0.00" inputmode="decimal" min="0" step="0.01">
       </div>
-      <div class="fld"><label class="flbl">Description</label><input type="text" id="f-desc" placeholder="What was this for?"></div>
+      
       <div class="row2">
         <div class="fld"><label class="flbl">Date</label><input type="date" id="f-date"></div>
         <div class="fld"><label class="flbl">Account</label>
@@ -503,13 +503,14 @@ function loginUser(email,name){
   uKey=userDataKey(email);
   UD=getUserData();
   // store session
-  try{ sessionStorage.setItem('gga_session',JSON.stringify({email:email,name:name})); }catch(e){}
+  try{ localStorage.setItem('gga_session',JSON.stringify({email:email,name:name})); }catch(e){}
   showApp();
 }
 
 function showApp(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-shell').className='app-shell visible';
+  setTimeout(function(){ render(); }, 80);
   // update header
   var av=document.getElementById('hdr-av'); if(av) av.textContent=(currentUser.name||'?')[0].toUpperCase();
   var hn=document.getElementById('hdr-name'); if(hn) hn.textContent=currentUser.name||'Account';
@@ -519,7 +520,7 @@ function showApp(){
 
 function logout(){
   if(!window.confirm('Log out of GoGadAFI?')) return;
-  try{ sessionStorage.removeItem('gga_session'); }catch(e){}
+  try{ localStorage.removeItem('gga_session'); }catch(e){}
   currentUser=null; uKey=''; UD=null;
   document.getElementById('app-shell').className='app-shell';
   document.getElementById('auth-screen').style.display='flex';
@@ -528,16 +529,20 @@ function logout(){
   authErr(''); authOk('');
 }
 
-// Auto-resume session
-(function(){
+// Auto-resume session on load
+document.addEventListener('DOMContentLoaded', function() {
   try{
-    var s=sessionStorage.getItem('gga_session');
+    var s=localStorage.getItem('gga_session');
     if(s){
       var sess=JSON.parse(s);
-      if(sess&&sess.email){ loginUser(sess.email,sess.name); }
+      if(sess&&sess.email){
+        loginUser(sess.email,sess.name);
+        // Force render after short delay to ensure DOM is fully ready
+        setTimeout(function(){ render(); }, 100);
+      }
     }
   }catch(e){}
-})();
+});
 
 // Enter key on auth
 document.addEventListener('keydown',function(e){
@@ -580,14 +585,14 @@ function getcat(id){
 // ═══════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════
-var fmt=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
+var fmt=new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0});
 function D(n){ return fmt.format(n||0); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function today(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function pad(n){ return n<10?'0'+n:String(n); }
 function ymk(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1); }
 function isNow(iso){ return iso&&iso.startsWith(ymk()); }
-function fmtD(iso){ if(!iso) return ''; var p=iso.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function fmtD(iso){ if(!iso) return ''; var p=iso.split('-'); var d=new Date(+p[0],+p[1]-1,+p[2]); return d.toLocaleDateString('en-IN',{month:'short',day:'numeric'}); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function monthLabel(){ return new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
 
@@ -747,7 +752,7 @@ function renderSettings(){
       +'<button class="btn btn-d btn-full" onclick="logout()">🚪 Log Out</button>'
     +'</div></div>'
     +'<div class="set-section"><div class="set-head">💰 Monthly Budget</div><div class="set-body">'
-      +'<div class="fld"><label class="flbl">Budget Amount ($)</label><input type="number" id="s-budget" value="'+(C().budget||'')+'" placeholder="e.g. 3500" inputmode="decimal"></div>'
+      +'<div class="fld"><label class="flbl">Budget Amount (₹)</label><input type="number" id="s-budget" value="'+(C().budget||'')+'" placeholder="e.g. 35000" inputmode="decimal"></div>'
       +'<button class="btn btn-p btn-full" onclick="saveBudget()">Save Budget</button>'
     +'</div></div>'
     +'<div class="set-section"><div class="set-head" style="display:flex;align-items:center;justify-content:space-between">📧 Email Reports'+(active?'<span style="background:#E6FBF5;color:var(--green);font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px">● Active</span>':'')+'</div><div class="set-body">'
@@ -770,7 +775,6 @@ function openAdd(){
   document.getElementById('modal-title').textContent='New Entry';
   document.getElementById('f-amt').value='';
   document.getElementById('f-date').value=today();
-  document.getElementById('f-desc').value='';
   document.getElementById('f-note').value='';
   document.getElementById('f-acc').value='💳 Card';
   document.getElementById('edit-del-wrap').style.display='none';
@@ -786,7 +790,6 @@ function openEdit(id){
   document.getElementById('modal-title').textContent='Edit Entry';
   document.getElementById('f-amt').value=e.amount;
   document.getElementById('f-date').value=e.date;
-  document.getElementById('f-desc').value=e.desc||'';
   document.getElementById('f-note').value=e.note||'';
   document.getElementById('f-acc').value=e.account||'💳 Card';
   document.getElementById('edit-del-wrap').style.display='block';
@@ -815,14 +818,13 @@ function pickCat(id){ eCat=id; renderChips(); }
 function saveEntry(){
   var amt=parseFloat(document.getElementById('f-amt').value);
   var date=document.getElementById('f-date').value;
-  var desc=(document.getElementById('f-desc').value||'').trim();
+  var desc='';
   var note=(document.getElementById('f-note').value||'').trim();
   var acc=document.getElementById('f-acc').value;
   if(!amt||amt<=0){toast('⚠️','Enter a valid amount','var(--amber)');return;}
   if(!date){toast('⚠️','Pick a date','var(--amber)');return;}
-  if(!desc){toast('⚠️','Add a description','var(--amber)');return;}
   if(!eCat){toast('⚠️','Pick a category','var(--amber)');return;}
-  var entry={id:eId||uid(),amount:amt,date:date,desc:desc,note:note,account:acc,category:eCat,type:eType};
+  var entry={id:eId||uid(),amount:amt,date:date,desc:note||'Entry',note:note,account:acc,category:eCat,type:eType};
   if(eId){
     for(var i=0;i<UD.entries.length;i++) if(UD.entries[i].id===eId){UD.entries[i]=entry;break;}
     toast('✅','Entry updated','var(--green)');
@@ -889,8 +891,8 @@ var GICONS=['🏠','🚗','✈️','💍','📱','🎓','🏖️','💻'];
 var GCOLS=['#FF6B6B','#0097FF','#00C48C','#FF8C42','#A855F7','#F59E0B','#EC4899','#5B4BDB'];
 function addGoalPrompt(){
   var name=window.prompt('Goal name:'); if(!name) return;
-  var target=parseFloat(window.prompt('Target amount ($):')); if(!target||isNaN(target)) return;
-  var saved=parseFloat(window.prompt('Already saved ($):')||'0')||0;
+  var target=parseFloat(window.prompt('Target amount (₹):')); if(!target||isNaN(target)) return;
+  var saved=parseFloat(window.prompt('Already saved (₹):')||'0')||0;
   var idx=UD.goals.length%GICONS.length;
   UD.goals.push({id:uid(),name:name,target:target,saved:saved,icon:GICONS[idx],color:GCOLS[idx]});
   persist(); render(); toast('🎯','Goal added','var(--green)');
@@ -983,7 +985,7 @@ var deferredPrompt = null;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js').catch(function(e) {
+    navigator.serviceWorker.register('./sw.js').catch(function(e) {
       console.log('SW reg failed', e);
     });
   });
