@@ -2,8 +2,8 @@
   "name": "GoGadAFI \u2014 Smart Money Manager",
   "short_name": "GoGadAFI",
   "description": "Track your expenses, income, goals and budgets \u2014 privately, per account.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a0a5e",
@@ -32,7 +32,7 @@
       "name": "Add Expense",
       "short_name": "Add",
       "description": "Quickly add a new expense",
-      "url": "/?action=add",
+      "url": "./?action=add",
       "icons": [
         {
           "src": "icon-192.svg",
