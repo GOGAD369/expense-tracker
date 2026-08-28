@@ -1,16 +1,18 @@
-var CACHE = 'gogadafi-v1';
+var CACHE = 'gogadafi-v2';
 var ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.svg',
-  '/icon-512.svg'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.svg',
+  './icon-512.svg'
 ];
 
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE).then(function(cache) {
       return cache.addAll(ASSETS);
+    }).catch(function(err) {
+      console.log('Cache failed', err);
     })
   );
   self.skipWaiting();
@@ -35,7 +37,9 @@ self.addEventListener('fetch', function(e) {
       var net = fetch(e.request).then(function(res) {
         if (res && res.status === 200) {
           var clone = res.clone();
-          caches.open(CACHE).then(function(cache) { cache.put(e.request, clone); });
+          caches.open(CACHE).then(function(cache) {
+            cache.put(e.request, clone);
+          });
         }
         return res;
       }).catch(function() { return cached; });
