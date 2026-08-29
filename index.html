@@ -13,6 +13,28 @@
 <link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="icon-192.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.svg">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  (function(){ emailjs.init('Pc-IkUYve594Ds0N_'); })();
+</script>
+<script>
+// Prevent pull-to-refresh on Chrome Android
+var _lastY = 0;
+document.addEventListener('touchstart', function(e){ _lastY = e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchmove', function(e){
+  var y = e.touches[0].clientY;
+  var el = e.target;
+  // Walk up to find scrollable parent
+  while(el && el !== document.body){
+    if(el.scrollTop > 0 && y > _lastY) break; // scrolling up inside element — allow
+    el = el.parentNode;
+  }
+  if(el === document.body || !el){
+    if(y > _lastY) e.preventDefault(); // top of page, dragging down — block
+  }
+  _lastY = y;
+}, {passive:false});
+</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -23,7 +45,7 @@
   --green:#00C48C;--red:#FF4757;--amber:#FF8C42;
   --card-r:20px;--r:12px;--rs:8px;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:hidden;overscroll-behavior-y:contain}
 
 /* ── AUTH SCREEN ── */
 .auth-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#1a0a5e 0%,#3a20aa 50%,#5B4BDB 100%)}
@@ -309,7 +331,10 @@ textarea{resize:vertical;min-height:70px}
 
   <div class="page" id="pg-report">
     <div class="topbar">
-      <div><div class="topbar-title">Report</div><div class="topbar-sub" id="report-sub"></div></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="tb-icon" onclick="nav('home')" style="font-size:20px;color:var(--accent)">‹</button>
+        <div><div class="topbar-title">Report</div><div class="topbar-sub" id="report-sub"></div></div>
+      </div>
     </div>
     <div class="scroll-body" id="report-body"></div>
   </div>
@@ -597,6 +622,42 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function monthLabel(){ return new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'}); }
 
 // ═══════════════════════════════════════
+// MONTH PICKER
+// ═══════════════════════════════════════
+var selectedYM = ymk(); // e.g. "2026-08"
+
+function openMonthPicker(){
+  // Build list of available months from entries + current month
+  var months = {};
+  months[ymk()] = true;
+  E().forEach(function(e){ if(e.date) months[e.date.slice(0,7)] = true; });
+  var list = Object.keys(months).sort().reverse();
+  // Show a native month input via hidden input trick
+  var inp = document.getElementById('month-picker-inp');
+  if(!inp){
+    inp = document.createElement('input');
+    inp.type = 'month';
+    inp.id = 'month-picker-inp';
+    inp.style.cssText = 'position:fixed;opacity:0;pointer-events:none;top:80px;left:20px;width:1px;height:1px';
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function(){
+      if(inp.value){ selectedYM = inp.value; render(); }
+    });
+  }
+  inp.value = selectedYM;
+  inp.focus();
+  inp.click();
+  try{ inp.showPicker(); } catch(e){}
+}
+
+function isSelectedMonth(iso){ return iso && iso.startsWith(selectedYM); }
+function selectedMonthLabel(){
+  var p = selectedYM.split('-');
+  var d = new Date(+p[0], +p[1]-1, 1);
+  return d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+}
+
+// ═══════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════
 var curPage='home';
@@ -625,14 +686,14 @@ function renderHome(){
   var sub=document.getElementById('home-sub');
   if(sub) sub.textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
 
-  var me=E().filter(function(e){ return isNow(e.date); });
+  var me=E().filter(function(e){ return isSelectedMonth(e.date); });
   var inc=me.filter(function(e){ return e.type==='income'; }).reduce(function(s,e){ return s+e.amount; },0);
   var exp=me.filter(function(e){ return e.type==='expense'; }).reduce(function(s,e){ return s+e.amount; },0);
   var bal=inc-exp;
   var pct=C().budget?Math.min(exp/C().budget*100,100):0;
   var pctC=pct>=90?'var(--red)':pct>=70?'var(--amber)':'var(--green)';
 
-  var recent=[].concat(E()).sort(function(a,b){ return b.date.localeCompare(a.date); }).slice(0,15);
+  var recent=[].concat(me).sort(function(a,b){ return b.date.localeCompare(a.date); });
   var groups={};
   recent.forEach(function(e){ if(!groups[e.date]) groups[e.date]=[]; groups[e.date].push(e); });
 
@@ -645,7 +706,7 @@ function renderHome(){
   var body=document.getElementById('home-body'); if(!body) return;
   body.innerHTML=
     '<div class="hero">'
-      +'<div class="hero-month">📅 '+monthLabel()+' ▾</div>'
+      +'<div class="hero-month" onclick="openMonthPicker()" style="cursor:pointer">📅 '+selectedMonthLabel()+' ▾</div>'
       +'<div class="hero-lbl">Current Balance</div>'
       +'<div class="hero-bal">'+D(bal)+'</div>'
       +'<div class="hero-sub"><span>↑ '+D(inc)+'</span> income this month</div>'
@@ -673,8 +734,8 @@ function txRow(e){
 // ── REPORT ────────────────────────────
 var repTab='expense';
 function renderReport(){
-  var sub=document.getElementById('report-sub'); if(sub) sub.textContent=monthLabel();
-  var me=E().filter(function(e){ return isNow(e.date); });
+  var sub=document.getElementById('report-sub'); if(sub) sub.textContent=selectedMonthLabel();
+  var me=E().filter(function(e){ return isSelectedMonth(e.date); });
   var exps=me.filter(function(e){ return e.type==='expense'; });
   var incs=me.filter(function(e){ return e.type==='income'; });
   var tExp=exps.reduce(function(s,e){ return s+e.amount; },0);
@@ -760,7 +821,6 @@ function renderSettings(){
     +'</div></div>'
     +'<div class="set-section"><div class="set-head">📂 Data</div><div class="set-body">'
       +'<button class="btn btn-g btn-full" onclick="exportCSV()">⬇ Export CSV</button>'
-      +'<button class="btn btn-g btn-full" onclick="exportJSON()">⬇ Export JSON</button>'
       +'<button class="btn btn-d btn-full" onclick="clearMyData()">🗑 Clear My Data</button>'
     +'</div></div>';
 }
@@ -864,15 +924,49 @@ function disableEmail(){ UD.cfg.emailActive=false; persist(); toast('🔕','Repo
 function sendNow(){
   var email=C().email||currentUser.email;
   if(!email){toast('⚠️','Set email first','var(--amber)');return;}
-  var me=E().filter(function(e){ return isNow(e.date); });
+  var me=E().filter(function(e){ return isSelectedMonth(e.date); });
   var tE=me.filter(function(e){ return e.type==='expense'; }).reduce(function(s,e){ return s+e.amount; },0);
   var tI=me.filter(function(e){ return e.type==='income'; }).reduce(function(s,e){ return s+e.amount; },0);
-  var ml=monthLabel();
-  var body='GoGadAFI Monthly Report — '+ml+'\n\nHi '+esc(currentUser.name||'there')+',\n\nYour '+ml+' summary:\n\nINCOME:   '+D(tI)+'\nEXPENSES: '+D(tE)+'\nNET:      '+D(tI-tE)+'\n\nTOP EXPENSES:\n';
-  [].concat(me).filter(function(e){ return e.type==='expense'; }).sort(function(a,b){ return b.amount-a.amount; }).slice(0,5).forEach(function(e){ body+='• '+e.desc+': '+D(e.amount)+'\n'; });
-  body+='\n— GoGadAFI Smart Money';
-  window.location.href='mailto:'+email+'?subject='+encodeURIComponent('GoGadAFI Report — '+ml)+'&body='+encodeURIComponent(body);
-  toast('📧','Opening mail app…','var(--accent)');
+  var ml=selectedMonthLabel();
+  var topExp='';
+  [].concat(me).filter(function(e){ return e.type==='expense'; }).sort(function(a,b){ return b.amount-a.amount; }).slice(0,5).forEach(function(e){ topExp+='• '+e.desc+': '+D(e.amount)+'\n'; });
+
+  toast('📧','Sending report…','var(--accent)');
+
+  // Use EmailJS free tier — sends directly without opening any app
+  // Service: gmail, Template configured to send to_email with message
+  var EMAILJS_SERVICE = 'service_gogadafi';
+  var EMAILJS_TEMPLATE = 'template_report';
+
+  var payload = {
+    to_email: email,
+    to_name: currentUser.name || 'there',
+    month_label: ml,
+    income: D(tI),
+    expenses: D(tE),
+    net: D(tI-tE),
+    top_expenses: topExp || '(none)',
+    app_name: 'GoGadAFI Smart Money'
+  };
+
+  // Try EmailJS if loaded, else fallback to mailto
+  if(window.emailjs){
+    window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload).then(function(){
+      toast('✅','Report sent to '+email,'var(--green)');
+    }, function(err){
+      console.log('EmailJS err', err);
+      sendNowFallback(email, ml, tI, tE, topExp);
+    });
+  } else {
+    sendNowFallback(email, ml, tI, tE, topExp);
+  }
+}
+
+function sendNowFallback(email, ml, tI, tE, topExp){
+  // Fallback: open mailto (user taps send once)
+  var body='GoGadAFI Monthly Report — '+ml+'\n\nHi '+esc(currentUser.name||'there')+',\n\nYour '+ml+' summary:\n\nINCOME:   '+D(tI)+'\nEXPENSES: '+D(tE)+'\nNET:      '+D(tI-tE)+'\n\nTOP EXPENSES:\n'+topExp+'\n— GoGadAFI Smart Money';
+  window.open('mailto:'+email+'?subject='+encodeURIComponent('GoGadAFI Report — '+ml)+'&body='+encodeURIComponent(body));
+  toast('📧','Tap Send in your mail app','var(--accent)');
 }
 
 // ═══════════════════════════════════════
